@@ -1,0 +1,95 @@
+openapi: "3.0.1"
+info:
+  description: "TiAPI is a standalone service providing restful API to execute SQL statements on TiDB to users. It's an experimental project making TiDB more serviceless. With TiAPI, the real TiDB instances are transparent to end users. This frees users from management duties of database instances and offers more flexibility to the database providers of upgrading and other management things."
+  version: "1.0.0"
+  title: "TiAPI"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+tags:
+  - name: "sql"
+    description: "Operations about executing SQL statements"
+  - name: "user"
+    description: "Operations about user"
+paths:
+  /user:
+    post:
+      tags:
+        - "user"
+      summary: "upsert a user and return a session"
+      description: "Use username and password to create a user or return a session if exists"
+      operationId: "authUser"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthUserRequest'
+        required: true
+      responses:
+        "200":
+          description: "Return a session of an existed user"
+        "201":
+          description: "Create a user successfully"
+        "401":
+          description: "Wrong username and password"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/statements:
+    post:
+      tags:
+        - "sql"
+      summary: "execute SQL statements"
+      operationId: "executeSQL"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteSQLRequest'
+        required: true
+      responses:
+        "200":
+          description: "The statement was executed successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecuteSQLResponse'
+        "422":
+          description: "An error occurred when executing the statement"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    AuthUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        database:
+          type: string
+    ExecuteSQLRequest:
+      type: object
+      properties:
+        statement:
+          type: string
+    ExecuteSQLResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: array
+            items:
+              type: object
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
