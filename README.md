@@ -19,3 +19,17 @@ Although TiDB is already a multi-tenant distributed database system, it still fo
 To achieve the final goal, TiDB architecture needs to be more cloud native. A rough direction is splitting into more microservices and using more cloud services. This helps reduce costs, enhance scalability and improve security.
 
 However, splitting TiDB functionalities and codebase is not an easy task, especially for hackathon work. So we choose adding another layer, TiAPI, to make a small step first, mimic the final architecture. Actually this might be a promising way, first having a working service and then deleting unnecessary codes from the large codebase.
+
+## Usage
+
+```shell
+curl -X POST https://127.0.0.1:8080/user -H 'content-type: application/json' -d '{"username": "test", "password": "test", "database": "test"}'
+```
+
+First you need to call the `user` API to create a user and its database. If the user already exists, it returns a working session via `X-Session-Id`.
+
+```shell
+curl -X POST https://127.0.0.1:8080/api/statements -H 'content-type: application/json' -d '{"statement": "select * from a"}' -H 'x-session-id: 5b94e69c-1c7d-4aa5-8a55-45ca9b135a2c'
+```
+
+With the working session, you could call the `statements` API to execute any SQL. The SQL statements are executed under the corresponding database in the session. Data rows are returned if everything works as expected while `422` http code returned when there is error.

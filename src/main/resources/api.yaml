@@ -56,6 +56,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExecuteSQLResponse'
+        "401":
+          description: "Not authorized"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         "422":
           description: "An error occurred when executing the statement"
           content:
