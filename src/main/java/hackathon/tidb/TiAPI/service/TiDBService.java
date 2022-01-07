@@ -72,7 +72,7 @@ public class TiDBService {
                 );
     }
 
-    public Mono<UserToTiDB> bindTiDB(String username, String database) {
+    public Mono<UserToTiDB> bindTiDB(String username) {
         return userToTiDBRepository.findByUsername(username)
                 .switchIfEmpty(tiDBRepository.findAll()
                         .collectList()
@@ -86,7 +86,6 @@ public class TiDBService {
                                 .flatMapMany(connection -> Flux.from(connection.createBatch()
                                         .add("CREATE USER " + username)
                                         .add("GRANT ALL PRIVILEGES ON `" + username + "_%` . * TO '" + username + "'@'%'")
-                                        .add("CREATE DATABASE `" + username + "_" + database + "`")
                                         .execute()))
                                 .then(Mono.fromCallable(() -> {
                                     userToTiDB.setCreated(true);
@@ -95,6 +94,15 @@ public class TiDBService {
                     }
                     return Mono.just(userToTiDB);
                 });
+    }
+
+    public Mono<Void> createDatabase(UserToTiDB userToTiDB, String database) {
+        return tiDBRepository.findById(userToTiDB.getTidbId())
+                .flatMap(this::getTiDBAdminConnection)
+                .flatMap(connection -> Mono.from(connection.createStatement(
+                        "CREATE DATABASE IF NOT EXISTS `" + userToTiDB.getUsername() + "_" + database + "`"
+                ).execute()))
+                .then();
     }
 
     private Mono<ExecuteSQLResponse> executeSQLWithConnection(Connection connection, String statement) {

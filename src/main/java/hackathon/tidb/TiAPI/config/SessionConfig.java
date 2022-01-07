@@ -9,6 +9,7 @@ import org.springframework.web.server.session.WebSessionIdResolver;
 
 @EnableRedisWebSession
 public class SessionConfig {
+    
     @Value("${spring.redis.host}")
     private String redisHost;
 

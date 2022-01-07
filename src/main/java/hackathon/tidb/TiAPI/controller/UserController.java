@@ -33,7 +33,10 @@ public class UserController implements UserApi {
                                     return Mono.just(Tuples.of(user, false));
                                 })
                                 .switchIfEmpty(userRepository.save(new User(request.getUsername(), request.getPassword())).map(user -> Tuples.of(user, true)))
-                                .flatMap(tuple -> tiDBService.bindTiDB(request.getUsername(), request.getDatabase()).thenReturn(tuple))
+                                .flatMap(tuple -> tiDBService.bindTiDB(request.getUsername())
+                                        .flatMap(userToTiDB -> tiDBService.createDatabase(userToTiDB, request.getDatabase()))
+                                        .thenReturn(tuple)
+                                )
                                 .flatMap(tuple -> exchange.getSession()
                                         .doOnNext(webSession -> webSession.getAttributes().put("username", request.getUsername()))
                                         .doOnNext(webSession -> webSession.getAttributes().put("database", request.getDatabase()))
