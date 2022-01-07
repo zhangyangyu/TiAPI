@@ -11,6 +11,9 @@ tags:
     description: "Operations about executing SQL statements"
   - name: "user"
     description: "Operations about user"
+  - name: "management"
+    description: "Operations for internal management"
+
 paths:
   /user:
     post:
@@ -69,6 +72,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /management/tidb:
+    get:
+      tags:
+        - "management"
+      summary: "list all backend TiDB instances"
+      operationId: "listTiDB"
+      responses:
+        "200":
+          description: "list all backend TiDB instances successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTiDBResponse"
+    post:
+      tags:
+        - "management"
+      summary: "add new backend TiDB instance"
+      operationId: "addTiDB"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TiDBInstance'
+        required: true
+      responses:
+        "201":
+          description: "add a TiDB instance successfully"
+
+  /management/user:
+    get:
+      tags:
+        - "management"
+      summary: "list all users"
+      operationId: listUser
+      responses:
+        "200":
+          description: "list all users successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUserResponse'
+
+  /management/usertotidb:
+    get:
+      tags:
+        - "management"
+      summary: "list all user to tidb relations"
+      operationId: listUserToTiDB
+      responses:
+        "200":
+          description: "list all user to tidb relations successfully"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUserToTiDBResponse'
+
 components:
   schemas:
     AuthUserRequest:
@@ -94,6 +153,54 @@ components:
             type: array
             items:
               type: object
+    TiDBInstance:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        adminUsername:
+          type: string
+        adminPassword:
+          type: string
+    ListTiDBResponse:
+      type: object
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/TiDBInstance'
+    UserInstance:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    ListUserResponse:
+      type: object
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserInstance'
+    UserToTiDBInstance:
+      type: object
+      properties:
+        username:
+          type: string
+        created:
+          type: boolean
+        tidb:
+          $ref: '#/components/schemas/TiDBInstance'
+    ListUserToTiDBResponse:
+      type: object
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserToTiDBInstance'
     ErrorResponse:
       type: object
       properties:
