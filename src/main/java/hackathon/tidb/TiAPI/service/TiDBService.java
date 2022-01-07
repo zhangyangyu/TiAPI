@@ -9,6 +9,7 @@ import hackathon.tidb.TiAPI.dao.TiDBRepository;
 import hackathon.tidb.TiAPI.dao.UserToTiDBRepository;
 import hackathon.tidb.TiAPI.model.ExecuteSQLRequest;
 import hackathon.tidb.TiAPI.model.ExecuteSQLResponse;
+import hackathon.tidb.TiAPI.model.ExecuteSQLResponseRows;
 import hackathon.tidb.TiAPI.model.TiDB;
 import hackathon.tidb.TiAPI.model.UserToTiDB;
 import io.r2dbc.spi.Connection;
@@ -20,11 +21,13 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.WebSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class TiDBService {
@@ -97,23 +100,30 @@ public class TiDBService {
     private Mono<ExecuteSQLResponse> executeSQLWithConnection(Connection connection, String statement) {
         return Flux.from(connection.createStatement(statement).execute())
                 .flatMap(result -> result.map((row, rowMetadata) -> {
-                    List<Object> array = new ArrayList<>(rowMetadata.getColumnNames().size());
+                    List<String> names = new ArrayList<>(rowMetadata.getColumnNames().size());
+                    List<Object> values = new ArrayList<>(rowMetadata.getColumnNames().size());
                     for (int i = 0; i < rowMetadata.getColumnNames().size(); i++) {
-                        array.add(row.get(i));
+                        names.add(rowMetadata.getColumnMetadata(i).getName());
+                        values.add(row.get(i));
                     }
-                    return array;
+                    return Tuples.of(names, values);
                 }))
                 .collectList()
                 .map(result -> {
                     ExecuteSQLResponse response = new ExecuteSQLResponse();
-                    response.setData(result);
+                    response.setRows(result.stream().map(tuple -> {
+                        ExecuteSQLResponseRows row = new ExecuteSQLResponseRows();
+                        row.setColumnNames(tuple.getT1());
+                        row.setValues(tuple.getT2());
+                        return row;
+                    }).collect(Collectors.toList()));
                     return response;
                 });
     }
 
     public Mono<ExecuteSQLResponse> executeSQL(WebSession webSession, ExecuteSQLRequest executeSQLRequest) {
         return userToTiDBRepository.findByUsername(webSession.getAttribute("username"))
-                .flatMap(userToTiDB -> this.getTiDBUserConnection(userToTiDB, webSession.getAttribute("database")))
+                .flatMap(userToTiDB -> getTiDBUserConnection(userToTiDB, webSession.getAttribute("database")))
                 .flatMap(connection -> executeSQLWithConnection(connection, executeSQLRequest.getStatement()))
                 .onErrorResume(R2dbcException.class, error -> Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, error.getMessage())));
     }

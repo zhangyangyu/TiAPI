@@ -132,27 +132,45 @@ components:
   schemas:
     AuthUserRequest:
       type: object
+      required:
+        - username
+        - password
+        - database
       properties:
         username:
           type: string
+          pattern: '[^_]+'
+          maxLength: 16
         password:
           type: string
+          maxLength: 32
         database:
           type: string
+          pattern: '[^_]+'
+          maxLength: 16
     ExecuteSQLRequest:
       type: object
+      required:
+        - statement
       properties:
         statement:
           type: string
     ExecuteSQLResponse:
       type: object
       properties:
-        data:
+        rows:
           type: array
           items:
-            type: array
-            items:
-              type: object
+            type: object
+            properties:
+              column_names:
+                type: array
+                items:
+                  type: string
+              values:
+                type: array
+                items:
+                  type: object
     TiDBInstance:
       type: object
       properties:
