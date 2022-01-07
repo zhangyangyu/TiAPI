@@ -29,7 +29,7 @@ curl -X POST https://127.0.0.1:8080/user -H 'content-type: application/json' -d 
 First you need to call the `user` API to create a user and its database. If the user already exists, it returns a working session via `X-Session-Id`.
 
 ```shell
-curl -X POST https://127.0.0.1:8080/api/statements -H 'content-type: application/json' -d '{"statement": "select * from a"}' -H 'x-session-id: 5b94e69c-1c7d-4aa5-8a55-45ca9b135a2c'
+curl -X POST https://127.0.0.1:8080/api/statements -H 'content-type: application/json' -d '{"statement": "create table test(value int primary key); insert into test (value) values (1); select * from test;"}' -H 'x-session-id: 5b94e69c-1c7d-4aa5-8a55-45ca9b135a2c'
 ```
 
 With the working session, you could call the `statements` API to execute any SQL. The SQL statements are executed under the corresponding database in the session. Data rows are returned if everything works as expected while `422` http code returned when there is error.
